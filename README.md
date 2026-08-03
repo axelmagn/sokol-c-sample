@@ -78,4 +78,4 @@ Build and run in one step using `bin/run.sh` or `bin/run.ps1`:
 
 ## AI Usage Disclosure
 
-This project was made with the assistance of LLM agents.  It contains both handcrafted and generated code.
+This project was made with the assistance of LLM agents.  It contains both handcrafted and generated code.  I understand if this bums you out, and it's cool if you only want to use handcrafted source.  I decided that life is too short for rolling boilerplate and windows build scripts by hand.
