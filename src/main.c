@@ -55,6 +55,7 @@ static void init(void) {
   snk_setup(&(snk_desc_t){
       .dpi_scale = sapp_dpi_scale(),
       .logger.func = slog_func,
+      .enable_set_mouse_cursor = true,
   });
 
   state.bg_color[0] = 0.1f;
@@ -99,6 +100,8 @@ static void init(void) {
 static void frame(void) {
   // Build Nuklear UI
   struct nk_context *ctx = snk_new_frame();
+
+  nk_style_hide_cursor(ctx);
 
   if (nk_begin(ctx, "Sample UI Control", nk_rect(20, 20, 260, 240),
                NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
