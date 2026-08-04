@@ -4,18 +4,7 @@ A lightweight, simple starter template for C using [sokol](https://github.com/fl
 
 No CMake or build systems, just scripts.
 
-## Getting Started
-
-### Prerequisites
-
-- **C Compiler**: `clang` (default) or `gcc`
-- **Utilities**: `curl` & `tar` (for fetching dependencies)
-- **Linux**: OpenGL and X11 dev libraries (`libgl1-mesa-dev`, `libx11-dev`, `libxi-dev`, `libxcursor-dev`)
-- **macOS**: Xcode Command Line Tools
-- **Windows**: `clang` / LLVM or GCC with PowerShell 5.1+
-- **Web target (optional)**: [Emscripten](https://emscripten.org/) (`emcc`) & `python` / `python3`
-
-### Quickstart
+## Quickstart
 
 1. Fetch dependencies:
 
@@ -39,7 +28,7 @@ No CMake or build systems, just scripts.
 
 **NOTE**: for reproducible builds, pass `--pin` when fetching dependencies to capture exact commit hashes into `deps.lock`.
 
-## Usage
+## Build Scripts
 
 ### Fetching & Pinning Dependencies
 
