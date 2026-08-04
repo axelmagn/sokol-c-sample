@@ -2,9 +2,6 @@
 param (
     [switch]$Web,
 
-    [Alias("fetch-deps")]
-    [switch]$FetchDeps,
-
     [Alias("p")]
     [int]$Port = 8080,
 
@@ -19,7 +16,6 @@ if ($Help) {
     Write-Host "Usage: .\bin\run.ps1 [OPTIONS]"
     Write-Host "Options:"
     Write-Host "  -Web, --web         Build and serve WebAssembly target"
-    Write-Host "  -FetchDeps, --fetch-deps  Force fetch dependencies before building"
     Write-Host "  -Port, --port PORT  HTTP server port for web target (default: 8080)"
     Write-Host "  -Help, --help       Display this help message"
     exit 0
@@ -43,7 +39,6 @@ function Run-Web {
 
 $buildParams = @{}
 if ($Web) { $buildParams["Web"] = $true }
-if ($FetchDeps) { $buildParams["FetchDeps"] = $true }
 
 & "$PSScriptRoot\build.ps1" @buildParams
 

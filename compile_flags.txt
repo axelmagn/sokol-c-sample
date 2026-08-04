@@ -1,4 +1,3 @@
--Ideps/sokol
--Ideps/nuklear
+-Ideps/include
 -I.
 -std=c99

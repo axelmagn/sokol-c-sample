@@ -9,7 +9,7 @@ No CMake or build systems, just scripts.
 ### Prerequisites
 
 - **C Compiler**: `clang` (default) or `gcc`
-- **Utilities**: `curl` & `tar` (for auto-downloading dependencies)
+- **Utilities**: `curl` & `tar` (for fetching dependencies)
 - **Linux**: OpenGL and X11 dev libraries (`libgl1-mesa-dev`, `libx11-dev`, `libxi-dev`, `libxcursor-dev`)
 - **macOS**: Xcode Command Line Tools
 - **Windows**: `clang` / LLVM or GCC with PowerShell 5.1+
@@ -17,22 +17,45 @@ No CMake or build systems, just scripts.
 
 ### Quickstart
 
-Run the app right away:
+1. Fetch dependencies:
 
 ```bash
 # Bash (Linux / macOS / WSL / Git Bash)
-./bin/run.sh
+./bin/fetch-deps.sh
 
 # PowerShell (Windows)
+.\bin\fetch-deps.ps1
+```
+
+2. Run the app:
+
+```bash
+# Bash
+./bin/run.sh
+
+# PowerShell
 .\bin\run.ps1
 ```
 
-Dependencies (Sokol, Nuklear, and `sokol-shdc`) will auto-fetch on the first run. **NOTE**: for reliable builds, consider doing one of the following:
-
-1. configure a recent commit hash in `config.sh` / `config.ps1` to make sure you get the same files every time.
-2. vendor `deps/` by removing it from `.gitignore` and checking it into git.
+**NOTE**: for reproducible builds, pass `--pin` when fetching dependencies to capture exact commit hashes into `deps.lock`.
 
 ## Usage
+
+### Fetching & Pinning Dependencies
+
+Fetch Sokol, Nuklear, and `sokol-shdc`:
+
+```bash
+# Bash
+./bin/fetch-deps.sh          # fetch dependencies
+./bin/fetch-deps.sh --pin    # fetch and capture commit hashes to deps.lock
+
+# PowerShell
+.\bin\fetch-deps.ps1         # fetch dependencies
+.\bin\fetch-deps.ps1 -Pin    # fetch and capture commit hashes to deps.lock
+```
+
+When `deps.lock` is present, `config.sh` and `config.ps1` will automatically load the pinned commit hashes.
 
 ### Building
 
@@ -42,13 +65,11 @@ Build using `bin/build.sh` or `bin/build.ps1`:
 # Bash
 ./bin/build.sh              # build native binary
 ./bin/build.sh --web        # build web assembly target
-./bin/build.sh --fetch-deps # (re)fetch sokol and nuklear
 ./bin/build.sh --clean      # clean build directory
 
 # PowerShell
 .\bin\build.ps1             # build native binary
 .\bin\build.ps1 -Web        # build web assembly target
-.\bin\build.ps1 -FetchDeps  # (re)fetch sokol and nuklear
 .\bin\build.ps1 -Clean      # clean build directory
 ```
 
@@ -72,10 +93,11 @@ Build and run in one step using `bin/run.sh` or `bin/run.ps1`:
 
 - `src/main.c`: Application logic & Nuklear UI
 - `shaders/`: GLSL shaders and generated header code
-- `bin/`: Build, run, and config scripts (Bash and PowerShell)
-- `deps/`: Downloaded Sokol & Nuklear headers + `sokol-shdc`
+- `bin/`: Build, run, fetch-deps, and config scripts (Bash and PowerShell)
+- `deps/`: Downloaded dependencies (`deps/include/` for headers, `deps/tools/` for `sokol-shdc`)
+- `deps.lock`: Optional lockfile containing pinned commit hashes
 
 
 ## AI Usage Disclosure
 
-This project was made with the assistance of LLM agents.  It contains both handcrafted and generated code.  I understand if this bums you out, and it's cool if you only want to use handcrafted source.  I decided that life is too short for rolling boilerplate and windows build scripts by hand.
+This project was made with the assistance of LLM agents.  It contains both handcrafted and generated code.  I understand if this bums you out, and it's cool if you only want to use handcrafted source.  I decided that life is too short for writing boilerplate and windows build scripts by hand.

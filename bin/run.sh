@@ -5,7 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
 BUILD_WEB=0
-FETCH_DEPS=0
 PORT=8080
 
 usage() {
@@ -13,7 +12,6 @@ usage() {
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
     echo "  --web         Build and serve WebAssembly target"
-    echo "  --fetch-deps  Force fetch dependencies before building"
     echo "  --port PORT   HTTP server port for web target (default: 8080)"
     echo "  --help        Display this help message"
     exit 0
@@ -24,10 +22,6 @@ parse_args() {
         case "$1" in
             --web)
                 BUILD_WEB=1
-                shift
-                ;;
-            --fetch-deps)
-                FETCH_DEPS=1
                 shift
                 ;;
             --port)
@@ -61,9 +55,6 @@ main() {
     BUILD_ARGS=()
     if [[ "${BUILD_WEB}" -eq 1 ]]; then
         BUILD_ARGS+=("--web")
-    fi
-    if [[ "${FETCH_DEPS}" -eq 1 ]]; then
-        BUILD_ARGS+=("--fetch-deps")
     fi
 
     "${SCRIPT_DIR}/build.sh" "${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"}"

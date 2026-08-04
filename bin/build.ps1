@@ -2,9 +2,6 @@
 param (
     [switch]$Web,
 
-    [Alias("fetch-deps")]
-    [switch]$FetchDeps,
-
     [switch]$Clean,
 
     [Alias("h")]
@@ -18,7 +15,6 @@ if ($Help) {
     Write-Host "Usage: .\bin\build.ps1 [OPTIONS]"
     Write-Host "Options:"
     Write-Host "  -Web, --web         Build WebAssembly target using Emscripten (emcc)"
-    Write-Host "  -FetchDeps, --fetch-deps  Fetch or update Sokol and Nuklear dependencies"
     Write-Host "  -Clean, --clean     Clean build artifacts before building"
     Write-Host "  -Help, --help       Display this help message"
     exit 0
@@ -53,51 +49,6 @@ function Clean-BuildDir {
     }
 }
 
-function Fetch-Deps {
-    Write-Host "==> Fetching dependencies for $shdcOs..."
-    New-Item -ItemType Directory -Force -Path $SOKOL_DIR, $NUKLEAR_DIR, $TOOLS_DIR | Out-Null
-
-    $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
-    New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
-
-    try {
-        $sokolCommitShort = $SOKOL_COMMIT.Substring(0, [Math]::Min(7, $SOKOL_COMMIT.Length))
-        Write-Host "==> Downloading Sokol headers ($sokolCommitShort)..."
-        $sokolTar = Join-Path $tmpDir "sokol.tar.gz"
-        curl.exe -sSL -o $sokolTar $SOKOL_URL
-        tar.exe -xzf $sokolTar -C $tmpDir
-
-        $extractedSokol = Get-ChildItem -Path $tmpDir -Directory -Filter "sokol-*" | Select-Object -First 1
-        if ($extractedSokol) {
-            Get-ChildItem -Path $extractedSokol.FullName -Filter "*.h" | Copy-Item -Destination $SOKOL_DIR -Force
-            $utilDir = Join-Path $extractedSokol.FullName "util"
-            if (Test-Path $utilDir) {
-                $targetUtilDir = Join-Path $SOKOL_DIR "util"
-                New-Item -ItemType Directory -Force -Path $targetUtilDir | Out-Null
-                Get-ChildItem -Path $utilDir -Filter "*.h" | Copy-Item -Destination $targetUtilDir -Force
-            }
-        }
-
-        $shdcCommitShort = $SOKOL_TOOLS_COMMIT.Substring(0, [Math]::Min(7, $SOKOL_TOOLS_COMMIT.Length))
-        Write-Host "==> Downloading sokol-shdc compiler ($shdcOs @ $shdcCommitShort)..."
-        $shdcRemoteName = if ($shdcOs -eq "win32") { "sokol-shdc.exe" } else { "sokol-shdc" }
-        $shdcUrl = "${SOKOL_SHDC_BASE_URL}/${shdcOs}/${shdcRemoteName}"
-        curl.exe -sSL -o $shdcExe $shdcUrl
-
-        $nuklearCommitShort = $NUKLEAR_COMMIT.Substring(0, [Math]::Min(7, $NUKLEAR_COMMIT.Length))
-        Write-Host "==> Downloading Nuklear header ($nuklearCommitShort)..."
-        $nuklearFile = Join-Path $NUKLEAR_DIR "nuklear.h"
-        curl.exe -sSL -o $nuklearFile $NUKLEAR_URL
-
-        Write-Host "==> Dependencies successfully fetched."
-    }
-    finally {
-        if (Test-Path $tmpDir) {
-            Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
-        }
-    }
-}
-
 function Compile-Shaders {
     Write-Host "==> Compiling shaders in $SHADERS_DIR..."
     $glslFiles = Get-ChildItem -Path $SHADERS_DIR -Filter "*.glsl" -File -ErrorAction SilentlyContinue
@@ -127,8 +78,7 @@ function Build-Native {
     $argsList = @(
         "-std=c99", "-Wall", "-Wextra", "-O2",
         "-D_CRT_SECURE_NO_WARNINGS",
-        "-I$SOKOL_DIR",
-        "-I$NUKLEAR_DIR",
+        "-I$INCLUDE_DIR",
         "-I$REPO_ROOT",
         $srcFile
     ) + $nativeLibs + @("-o", $outFile)
@@ -157,8 +107,7 @@ function Build-Web {
         "-s", "USE_WEBGL2=1",
         "-s", "WASM=1",
         "--shell-file", "$WEB_DIR\shell.html",
-        "-I$SOKOL_DIR",
-        "-I$NUKLEAR_DIR",
+        "-I$INCLUDE_DIR",
         "-I$REPO_ROOT",
         "$SRC_DIR\main.c",
         "-o", "$webBuildDir\index.html"
@@ -174,10 +123,6 @@ function Build-Web {
 
 if ($Clean) {
     Clean-BuildDir
-}
-
-if ($FetchDeps -or (-not (Test-Path $SOKOL_DIR)) -or (-not (Test-Path $shdcExe))) {
-    Fetch-Deps
 }
 
 Compile-Shaders

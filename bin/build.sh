@@ -5,7 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
 BUILD_WEB=0
-FETCH_DEPS=0
 CLEAN_FIRST=0
 
 usage() {
@@ -13,7 +12,6 @@ usage() {
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
     echo "  --web         Build WebAssembly target using Emscripten (emcc)"
-    echo "  --fetch-deps  Fetch or update Sokol and Nuklear dependencies"
     echo "  --clean       Clean build artifacts before building"
     echo "  --help        Display this help message"
     exit 0
@@ -24,10 +22,6 @@ parse_args() {
         case "$1" in
             --web)
                 BUILD_WEB=1
-                shift
-                ;;
-            --fetch-deps)
-                FETCH_DEPS=1
                 shift
                 ;;
             --clean)
@@ -72,38 +66,6 @@ clean() {
     rm -rf "${BUILD_DIR}"
 }
 
-fetch_deps() {
-    echo "==> Fetching dependencies for ${SHDC_OS}..."
-    mkdir -p "${SOKOL_DIR}" "${NUKLEAR_DIR}" "${TOOLS_DIR}"
-
-    TMP_DIR="$(mktemp -d)"
-    trap 'rm -rf "${TMP_DIR}"' EXIT
-
-    echo "==> Downloading Sokol headers (${SOKOL_COMMIT:0:7})..."
-    curl -sSL -o "${TMP_DIR}/sokol.tar.gz" "${SOKOL_URL}"
-    tar -xzf "${TMP_DIR}/sokol.tar.gz" -C "${TMP_DIR}"
-
-    EXTRACTED_SOKOL="$(find "${TMP_DIR}" -maxdepth 1 -type d -name "sokol-*" | head -n 1)"
-    if [[ -n "${EXTRACTED_SOKOL}" ]]; then
-        cp -r "${EXTRACTED_SOKOL}"/*.h "${SOKOL_DIR}/" 2>/dev/null || true
-        if [[ -d "${EXTRACTED_SOKOL}/util" ]]; then
-            mkdir -p "${SOKOL_DIR}/util"
-            cp -r "${EXTRACTED_SOKOL}/util"/*.h "${SOKOL_DIR}/util/" 2>/dev/null || true
-        fi
-    fi
-
-    echo "==> Downloading sokol-shdc compiler (${SHDC_OS} @ ${SOKOL_TOOLS_COMMIT:0:7})..."
-    curl -sSL -o "${TOOLS_DIR}/sokol-shdc" "${SOKOL_SHDC_BASE_URL}/${SHDC_OS}/sokol-shdc"
-    chmod +x "${TOOLS_DIR}/sokol-shdc"
-
-    echo "==> Downloading Nuklear header (${NUKLEAR_COMMIT:0:7})..."
-    curl -sSL -o "${NUKLEAR_DIR}/nuklear.h" "${NUKLEAR_URL}"
-
-    trap - EXIT
-    rm -rf "${TMP_DIR}"
-    echo "==> Dependencies successfully fetched."
-}
-
 compile_shaders() {
     echo "==> Compiling shaders in ${SHADERS_DIR}..."
     shopt -s nullglob
@@ -130,8 +92,7 @@ build_native() {
     mkdir -p "${BUILD_DIR}"
     "${CC}" -std=c99 -Wall -Wextra -O2 \
         -D_CRT_SECURE_NO_WARNINGS \
-        -I"${SOKOL_DIR}" \
-        -I"${NUKLEAR_DIR}" \
+        -I"${INCLUDE_DIR}" \
         -I"${REPO_ROOT}" \
         "${SRC_DIR}/main.c" \
         "${NATIVE_LIBS[@]}" \
@@ -150,8 +111,7 @@ build_web() {
         -s USE_WEBGL2=1 \
         -s WASM=1 \
         --shell-file "${WEB_DIR}/shell.html" \
-        -I"${SOKOL_DIR}" \
-        -I"${NUKLEAR_DIR}" \
+        -I"${INCLUDE_DIR}" \
         -I"${REPO_ROOT}" \
         "${SRC_DIR}/main.c" \
         -o "${BUILD_DIR}/web/index.html"
@@ -163,10 +123,6 @@ main() {
 
     if [[ "${CLEAN_FIRST}" -eq 1 ]]; then
         clean
-    fi
-
-    if [[ "${FETCH_DEPS}" -eq 1 ]] || [[ ! -d "${SOKOL_DIR}" ]] || [[ ! -f "${TOOLS_DIR}/sokol-shdc" ]]; then
-        fetch_deps
     fi
 
     compile_shaders

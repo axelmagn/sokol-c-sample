@@ -1,5 +1,4 @@
 CompileFlags:
   Add:
-    - -Ideps/sokol
-    - -Ideps/nuklear
+    - -Ideps/include
     - -I.
